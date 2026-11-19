@@ -1,0 +1,70 @@
+# design.jobhunter07.com — detailed notes
+
+A Next.js + Storybook design system. Storybook is the deployed artifact
+(GitHub Pages, custom domain `design.jobhunter07.com`); the Next app is mostly
+the create-next-app default.
+
+## Verify everything with these four commands
+- `npx tsc --noEmit` — typecheck
+- `npx eslint` — lint
+- `npx next build` — Next production build
+- `npm run build-storybook` — the deployed artifact; also `npx vitest run`
+  (Storybook's Vitest project, 22 tests) and `npx playwright test` (1 visual test).
+
+`npm ci` is reproducible and is what CI runs.
+
+## TypeScript is pinned to 6.0.x on purpose (2026-11-19)
+- **Do not "upgrade" to TypeScript 7.** `typescript-eslint`, which
+  `eslint-config-next` depends on, declares `typescript: ">=4.8.4 <6.1.0"` and
+  **throws at config load** on TS 7 (`typescript-eslint does not support TS 7.0`),
+  so `npm run lint` dies before linting a single file. TS 7 is the native-port
+  rewrite; typescript-eslint support is tracked in their issue #10940.
+- `tsc --noEmit` itself works fine on TS 7 — only ESLint breaks. That asymmetry
+  makes the failure look like an ESLint bug; it is a peer-range constraint.
+- `@types/node` stays on 24 to match the Node runtime. npm reports 26 as "latest"
+  but those types describe APIs Node 24 does not have.
+
+## Storybook 10 import paths
+- `@storybook/preview-api` **no longer exists**. Preview hooks (`useGlobals`,
+  `useArgs`, `useChannel`, …) come from **`storybook/preview-api`**.
+- Storybook APIs are imported from `@storybook/nextjs-vite` in this repo, not
+  `@storybook/react` (which is only a transitive dependency).
+
+## Preview hooks must be called in the story render body
+`useGlobals()` throws `Storybook preview hooks can only be called inside
+decorators and story functions` if called from:
+- a `parameters.docs.page` renderer, or
+- a child component rendered by the story.
+
+Both still render in the static build, so `build-storybook` passes and only the
+**Vitest storybook project catches it**. Put the hook directly in
+`render: function Render() { ... }` and pass the result down as a prop
+(see `src/stories/ThemePalette.stories.tsx`).
+
+## ESLint must ignore `storybook-static/`
+`eslint-config-next`'s default ignores cover `.next/`, `out/`, `build/` but not
+`storybook-static/`. Because that directory only exists after a Storybook build,
+the breakage is intermittent: linting it produced 276 errors from bundled JS.
+`eslint.config.mjs` now lists `storybook-static/**` in `globalIgnores`.
+
+## Playwright visual baselines are per-platform
+`playwright/jobhunter-home.spec.ts` screenshots the home story. Baselines are
+keyed by platform (`-chromium-win32.png`, `-chromium-linux.png`). The repo only
+had a **win32** baseline while CI is Ubuntu, so the test either failed with
+"snapshot doesn't exist" or — with `--update-snapshots` — silently wrote a fresh
+one and "passed". A `-chromium-linux.png` baseline now exists.
+Windows and Linux renders differ in height (1169 vs 1194 px) because of font
+metrics, so one baseline cannot serve both.
+
+## Toolchain notes
+- Node 24 (CI was pinned to 20; Vitest 5 needs >=22.12, ESLint 10 needs >=20.19).
+- Vite 8 is Rolldown-based; Storybook prints a harmless
+  `[MODULE_LEVEL_DIRECTIVE]` warning about `"use client"` in `next/dist/client/script.js`.
+- `npm install` must regenerate `package-lock.json` when a major bumps
+  (e.g. vitest 4 -> 5); a stale lockfile fails with ERESOLVE on peer ranges.
+- `npm install` prints "install scripts blocked" for esbuild/sharp/unrs-resolver.
+  Builds still work; esbuild's postinstall only matters if its binary is missing.
+- The sandbox has no `chrome` channel for Playwright MCP; use the `playwright`
+  npm package directly (`npx playwright install chromium`).
+- Throwaway `.mjs` scripts importing project deps must live in the project dir;
+  ESM will not resolve them from `/tmp`.

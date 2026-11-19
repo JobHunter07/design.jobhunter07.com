@@ -42,3 +42,7 @@ storybook-static
 .vs/design.jobhunter07.com.slnx/v18/.wsuo
 .vs/design.jobhunter07.com.slnx/v18/DocumentLayout.backup.json
 .vs/design.jobhunter07.com.slnx/v18/DocumentLayout.json
+
+# agent state (keep memory tracked, ignore the rest)
+.openhands/*
+!.openhands/memory/
