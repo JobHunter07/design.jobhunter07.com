@@ -3,10 +3,16 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { AdminStatsPanel } from '../../components/one-and-done/AdminStatsPanel';
 
 const meta = {
-  title: 'OneAndDone/AdminStatsPanel',
+  title: 'OneAndDone/Admin & Money/Business Stats Charts',
   component: AdminStatsPanel,
   parameters: {
     layout: 'padded',
+    docs: {
+      description: {
+        component:
+          'Used on Screen 5 — the Business Stats health dashboard. Verdict is evaluated danger-first from config thresholds; every stat is computed from the ledger, never hand-typed. All figures shown here are the mockup\'s labelled example/illustrative data, not actuals.',
+      },
+    },
   },
 } satisfies Meta<typeof AdminStatsPanel>;
 
@@ -14,25 +20,22 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Example / illustrative data: "In good shape" — coverage 1.04 vs target 1.01, MRR $5.00. */
-export const Default: Story = {
-  args: {},
+/** Full dashboard: verdict banner + health strip + all six charts. */
+export const VerdictAndHealth: Story = {
+  args: { variant: 'overview' },
 };
 
-/** Watch it: coverage at the 1.01 line, supply short 15 hunts. */
-export const WatchIt: Story = {
-  args: {
-    verdict: 'watch',
-    coverage: 1.01,
-  },
+/** The six charts: revenue vs cost, MRR steps, users, activity, coverage gauge, supply/demand. */
+export const MrrUsersActivity: Story = {
+  args: { variant: 'charts' },
 };
 
-/** Under water: costs exceed revenue. */
-export const UnderWater: Story = {
-  args: {
-    verdict: 'underwater',
-    coverage: 0.92,
-    mrr: 5,
-    monthlyCost: 1247,
-  },
+/** Supply / demand: 132 seekers need 27 hunts — 12 open, 15 short. */
+export const SupplyDemand: Story = {
+  args: { variant: 'supply' },
+};
+
+/** Stat cards: MRR, coverage, MAU, cost per user, matches, hires, and the rest. */
+export const StatCards: Story = {
+  args: { variant: 'cards' },
 };

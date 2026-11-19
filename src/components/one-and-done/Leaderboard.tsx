@@ -1,6 +1,7 @@
 import React from "react";
 
-import { CardShell, Icon, Muted, SectionTitle } from "./shared";
+import { LEADERBOARD_EMPLOYERS, LEADERBOARD_SEEKERS } from "./data";
+import { Icon, Ood, Pill } from "./shared";
 
 export interface LeaderboardRow {
   rank: number;
@@ -12,78 +13,182 @@ export interface LeaderboardRow {
   streak: string;
 }
 
+export type LeaderboardVariant = "both" | "seekers" | "employers";
+
 export interface LeaderboardProps {
-  seekers: LeaderboardRow[];
-  employers: LeaderboardRow[];
-  season?: string;
-  hidden?: boolean;
-  onToggleHidden?: () => void;
+  variant?: LeaderboardVariant;
 }
 
-function Board({ title, rows, hidden }: { title: string; rows: LeaderboardRow[]; hidden: boolean }) {
+function RankIcon({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <>
+        <span className="material-symbols-rounded rank-gold" aria-hidden="true">
+          emoji_events
+        </span>
+        <b>1</b>
+      </>
+    );
+  }
+  if (rank === 2 || rank === 3) {
+    return (
+      <>
+        <span
+          className={`material-symbols-rounded ${rank === 2 ? "rank-silver" : "rank-bronze"}`}
+          aria-hidden="true"
+        >
+          military_tech
+        </span>
+        <b>{rank}</b>
+      </>
+    );
+  }
+  return <b style={{ marginLeft: 6 }}>{rank}</b>;
+}
+
+function Board({
+  board,
+  title,
+  icon,
+  sub,
+  hiresLabel,
+  rows,
+  footNote,
+}: {
+  board: "seekers" | "employers";
+  title: string;
+  icon: string;
+  sub: string;
+  hiresLabel: string;
+  rows: readonly LeaderboardRow[];
+  footNote: React.ReactNode;
+}) {
+  const isSeeker = board === "seekers";
   return (
-    <div className="rounded-xl p-4 ring-1" style={{ borderColor: "var(--jh-border)", opacity: hidden ? 0.45 : 1 }}>
-      <h4 className="flex items-center gap-2 text-base font-bold" style={{ color: "var(--jh-text)" }}>
-        <Icon name="emoji_events" size={18} /> {title}
-      </h4>
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[420px] text-sm">
-          <thead>
-            <tr className="text-left" style={{ color: "var(--jh-muted-text)" }}>
-              <th scope="col" className="pb-2 pr-2 font-semibold">#</th>
-              <th scope="col" className="pb-2 pr-2 font-semibold">Hunter</th>
-              <th scope="col" className="pb-2 pr-2 font-semibold">Hunts</th>
-              <th scope="col" className="pb-2 pr-2 font-semibold">Coins earned</th>
-              <th scope="col" className="pb-2 pr-2 font-semibold">Avg response</th>
-              <th scope="col" className="pb-2 pr-2 font-semibold">Hires</th>
-              <th scope="col" className="pb-2 font-semibold">Streak</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.name} className="border-t" style={{ borderColor: "var(--jh-border)" }}>
-                <td className="py-2 pr-2 font-bold" style={{ color: "var(--jh-text)" }}>{row.rank}</td>
-                <td className="py-2 pr-2 font-semibold" style={{ color: "var(--jh-text)" }}>{row.name}</td>
-                <td className="py-2 pr-2" style={{ color: "var(--jh-text)" }}>{row.hunts}</td>
-                <td className="py-2 pr-2 font-mono" style={{ color: "var(--jh-text)" }}>{row.coins.toLocaleString()}</td>
-                <td className="py-2 pr-2" style={{ color: "var(--jh-text)" }}>{row.response}</td>
-                <td className="py-2 pr-2" style={{ color: "var(--jh-text)" }}>{row.hires}</td>
-                <td className="py-2" style={{ color: "var(--jh-text)" }}>{row.streak}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="leader-board" data-board={board} aria-label={`${title} leaderboard — example`}>
+      <div className={`leader-board-head ${isSeeker ? "seeker" : "employer"}`}>
+        <div>
+          <h4>
+            <Icon name={icon} /> {title}
+          </h4>
+          <span className="sub">{sub}</span>
+        </div>
+        <Pill tone="gold" icon="calendar_month">
+          This season
+        </Pill>
       </div>
+      <div className="leader-cols" aria-hidden="true">
+        <span>Rank</span>
+        <span>Hunter</span>
+        <span>Hunts</span>
+        <span>Coins earned</span>
+        <span>Avg reply</span>
+        <span>{hiresLabel}</span>
+        <span>Streak</span>
+      </div>
+      {rows.map((row) => {
+        const isYou = row.name.startsWith("Brian D.");
+        return (
+          <div key={row.name} className={`leader-row${row.rank === 1 ? " top1" : ""}${isYou ? " you-row" : ""}`}>
+            <span className="rank">
+              <RankIcon rank={row.rank} />
+            </span>
+            <span className="lname">
+              {isYou ? (
+                <>
+                  Brian D.{" "}
+                  <Pill tone="gold" icon="star">
+                    You · example
+                  </Pill>
+                  <small>Example seeker — your row</small>
+                </>
+              ) : (
+                <>
+                  {row.name}
+                  <small>Example {isSeeker ? "seeker" : "employer"}</small>
+                </>
+              )}
+            </span>
+            <span className="leader-stats">
+              <span className="num">
+                <small>Hunts </small>
+                {row.hunts}
+              </span>
+              <span className="num">
+                <small>Coins </small>
+                {row.coins.toLocaleString()}
+              </span>
+              <span className="num">
+                <small>Reply </small>
+                {row.response}
+              </span>
+              <span className="num">
+                <small>Hires </small>
+                {row.hires}
+              </span>
+            </span>
+            <span className="num streak-cell">{row.streak}</span>
+          </div>
+        );
+      })}
+      <p className="note" style={{ padding: "10px 14px", margin: 0, borderTop: "1px solid var(--line)" }}>
+        {footNote}
+      </p>
     </div>
   );
 }
 
 /**
- * Leaderboard — Top Seekers and Top Employers, side by side, ranked by
- * value added (hunts completed, coins earned, response time, hires,
- * streak). Never ranked by messages sent, cards revealed, or Fit Score.
- * Boards reset monthly; a ghosting strike removes a hunter for 14 days.
- * Top 3 per board earn 500 / 300 / 200 coins at season close (proposal).
+ * Leaderboard — Top Seekers and Top Employers, side by side, exactly as
+ * in the Storybook Preview artifact. Ranked by value added (hunts
+ * completed, coins earned, response time, hires, streak). Never ranked
+ * by messages sent, cards revealed, or Fit Score. Boards reset monthly;
+ * a ghosting strike removes a hunter for 14 days. Top 3 per board earn
+ * 500 / 300 / 200 coins at season close (proposal).
  */
-export function Leaderboard({ seekers, employers, season = "November season", hidden = false, onToggleHidden }: LeaderboardProps) {
+export function Leaderboard({ variant = "both" }: LeaderboardProps) {
   return (
-    <CardShell labelledBy="leaderboard-title">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <SectionTitle id="leaderboard-title">Leaderboard</SectionTitle>
-        <span className="text-sm" style={{ color: "var(--jh-muted-text)" }}>
-          {season} · Resets monthly on the 1st · Season rewards (proposal): 1st 500 · 2nd 300 · 3rd 200 coins
-        </span>
+    <Ood>
+      <div className="leader-grid">
+        {variant !== "employers" ? (
+          <Board
+            board="seekers"
+            title="Top Seekers"
+            icon="travel_explore"
+            sub="Hunting roles · Example names, illustrative figures"
+            hiresLabel="Hires conf."
+            rows={LEADERBOARD_SEEKERS}
+            footNote={
+              <>
+                Seeker “Hires” = <b>hires confirmed</b> by the seeker. Coins earned counts earn-back only —
+                free monthly coins don&apos;t rank you.
+              </>
+            }
+          />
+        ) : null}
+        {variant !== "seekers" ? (
+          <Board
+            board="employers"
+            title="Top Employers"
+            icon="crisis_alert"
+            sub="Hunting talent · Example names, illustrative figures"
+            hiresLabel="Hires made"
+            rows={LEADERBOARD_EMPLOYERS}
+            footNote={
+              <>
+                Employer “Hires” = <b>hires made</b> and confirmed by the seeker. Coins earned counts Hire
+                Rewards and earn-back — coins bought don&apos;t rank you.
+              </>
+            }
+          />
+        ) : null}
       </div>
-      <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-semibold" style={{ color: "var(--jh-text)" }}>
-        <input type="checkbox" checked={hidden} onChange={onToggleHidden} className="h-4 w-4 accent-[#4E6D4F]" />
-        Hide me from the boards
-      </label>
-      {hidden ? <Muted>You are hidden — your row is dimmed and you earn no season rewards while hidden.</Muted> : null}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Board title="Top Seekers" rows={seekers} hidden={hidden} />
-        <Board title="Top Employers" rows={employers} hidden={hidden} />
-      </div>
-      <Muted>Ranked by value added — never by messages, cards revealed, or Fit Score. A ghosting strike removes you for 14 days.</Muted>
-    </CardShell>
+      <p className="note" style={{ marginTop: 12 }}>
+        Use the variant control to isolate one board. The “You” row is outlined in gold dashes; hiding
+        yourself is instant and reversible, and never affects hunts or coins. Ranked by value added — never by
+        messages, cards revealed, or Fit Score. A ghosting strike removes you for 14 days. Season rewards
+        (proposal): 1st 500 · 2nd 300 · 3rd 200 coins.
+      </p>
+    </Ood>
   );
 }

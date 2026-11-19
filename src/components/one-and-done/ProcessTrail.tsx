@@ -1,87 +1,162 @@
 import React from "react";
 
-import { CardShell, Icon, Muted, SectionTitle, STATUS } from "./shared";
+import { PROCESS_STAGES, PROCESS_STAGES_INTAKE } from "./data";
+import { Icon, Ood, Pill } from "./shared";
 
-export interface ProcessStage {
-  name: string;
-  owner: string;
-  format: string;
-  dayOffset: number | null;
-  dayLabel: string;
-}
+export type ProcessTrailVariant = "tracker" | "intake";
 
 export interface ProcessTrailProps {
-  stages: ProcessStage[];
-  /** Index of the stage the hunt is currently on (0-based). */
-  currentStage?: number;
-  totalDaysToOffer?: number;
-  verdict?: string;
+  variant?: ProcessTrailVariant;
 }
 
-/**
- * Process Trail — the whole hunt, up front: Screen call → HR → Fit →
- * Tech → Offer → Onboarding, with day offsets and who runs each stage.
- * The seeker sees the full trail before revealing, so they know whether
- * the hunt is a wild goose chase or straight to the hunt.
- */
-export function ProcessTrail({ stages, currentStage = 0, totalDaysToOffer, verdict }: ProcessTrailProps) {
-  return (
-    <CardShell labelledBy="process-trail-title">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <SectionTitle id="process-trail-title">The hunt trail</SectionTitle>
-        {totalDaysToOffer !== undefined ? (
-          <span className="text-sm font-semibold" style={{ color: "var(--jh-text)" }}>
-            {stages.length} stages · {totalDaysToOffer} days to offer
-          </span>
-        ) : null}
-      </div>
-      {verdict ? (
-        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ backgroundColor: "#E6F4E6", color: STATUS.pass }}>
-          <Icon name="gps_fixed" size={14} /> {verdict}
-        </p>
-      ) : null}
+const TSTEP_ICONS = ["call", "badge", "handshake", "code", "description", "rocket_launch"];
+const TSTEP_SHORT = ["Screen call", "HR", "Fit", "Tech", "Offer", "Onboarding"];
+const TSTEP_LABELS = ["You are here · Day 0", "+3 days", "+4 days", "+5 days", "+6 days · Day 18", "After offer"];
+const TRACKER_DAYS = ["Day 0", "Day 3", "Day 7", "Day 12", "Day 18", "After offer"];
+const TRACKER_META = [
+  "Phone · 30 min · Booked from the slots below",
+  "Video · 45 min · Background, comp expectations, timeline",
+  "Video · 45 min · Team fit and working style",
+  "Video · 90 min · Live .NET problem-solving — no take-home",
+  "Written offer · Inside the declared 5-business-day decision window",
+  "After acceptance · Laptop shipped, accounts ready day 1",
+];
 
-      <ol className="mt-4 grid gap-0">
-        {stages.map((stage, index) => {
-          const isCurrent = index === currentStage;
-          const isDone = index < currentStage;
-          return (
-            <li key={stage.name} className="relative flex gap-3 pb-4 last:pb-0">
-              {index < stages.length - 1 ? (
-                <span
-                  aria-hidden
-                  className="absolute left-[11px] top-6 h-full w-0.5"
-                  style={{ backgroundColor: "var(--jh-border)" }}
-                />
-              ) : null}
-              <span
-                className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                style={{
-                  backgroundColor: isCurrent ? "var(--jh-secondary)" : isDone ? "var(--jh-primary)" : "var(--jh-border)",
-                  color: isCurrent ? "#1B1F1A" : isDone ? "#fff" : "var(--jh-muted-text)",
-                }}
-                aria-label={isCurrent ? `Current stage: ${stage.name}` : isDone ? `Completed: ${stage.name}` : stage.name}
-              >
-                {isDone ? <Icon name="check" size={14} /> : index + 1}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold" style={{ color: "var(--jh-text)" }}>
-                  {stage.name} <span className="font-semibold" style={{ color: "var(--jh-muted-text)" }}>· {stage.dayLabel}</span>
-                  {isCurrent ? (
-                    <span className="ml-2 rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: "#FDF3C8", color: "#8A6D3B" }}>
-                      You are here
-                    </span>
-                  ) : null}
-                </p>
-                <p className="text-sm" style={{ color: "var(--jh-muted-text)" }}>
-                  {stage.owner} · {stage.format}
-                </p>
+const CONTAINER: React.CSSProperties = {
+  maxWidth: 820,
+  margin: "0 auto",
+  border: "2px solid var(--moss)",
+  borderRadius: 12,
+  padding: 16,
+  background: "var(--card)",
+  textAlign: "left",
+};
+
+const HEAD_ROW: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 10,
+  flexWrap: "wrap",
+  alignItems: "flex-start",
+};
+
+const HEAD_H4: React.CSSProperties = {
+  margin: 0,
+  fontSize: 13,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+  color: "var(--muted)",
+};
+
+/**
+ * Process Trail — the whole hunt, up front, exactly as in the Storybook
+ * Preview artifact. Screen call → HR → Fit → Tech → Offer → Onboarding,
+ * with day offsets and who runs each stage. The seeker sees the full
+ * trail before revealing, so they know whether the hunt is a wild goose
+ * chase or straight to the hunt.
+ */
+export function ProcessTrail({ variant = "tracker" }: ProcessTrailProps) {
+  if (variant === "intake") {
+    return (
+      <Ood>
+        <div style={CONTAINER}>
+          <div style={HEAD_ROW}>
+            <h4 style={HEAD_H4}>
+              <Icon name="conversion_path" /> Need intake · Declared stages, in order
+            </h4>
+            <Pill tone="gold" icon="route">
+              6 stages · 18 days to offer
+            </Pill>
+          </div>
+          <p style={{ fontSize: 14, margin: "8px 0 0" }}>
+            Declare every stage before this Need can post — in order, with who runs it, how, how long, and
+            how many days after the stage before it. Seekers see this exact trail on the Target Card and
+            score it against their own hunt limits. You can&apos;t add a surprise stage later without the
+            seeker re-confirming.
+          </p>
+          <div className="stage-list" aria-label="Declared hunt stages, in order">
+            {PROCESS_STAGES_INTAKE.map((stage, i) => (
+              <div key={stage.name} className="stage-row">
+                <span className="stage-num">{i + 1}</span>
+                <div>
+                  <b>{stage.name}</b> — {stage.owner}
+                  <span className="stage-meta">{stage.format}</span>
+                </div>
+                <span className="stage-days">{stage.days}</span>
               </div>
-            </li>
-          );
-        })}
-      </ol>
-      <Muted>The 48-hour response clock runs at every stage, not just the first call. A stage added mid-hunt that wasn&apos;t in the intake is flagged, and you can walk away free.</Muted>
-    </CardShell>
+            ))}
+          </div>
+          <div className="proc-verdict straight">
+            <b>
+              <Icon name="check_circle" /> Against the seeker&apos;s limits — Optumserve: 6 stages · 18 days
+              to offer · no take-home → Straight to the hunt.
+            </b>
+            <p style={{ margin: "4px 0 0" }}>
+              Inside all three limits, so its process scores full marks. A 9-stage, 45-day process — or any
+              unpaid take-home while the seeker is set to No — would arrive flagged <b>Wild goose chase</b>,
+              with the process score cut before a Fit Score is ever shown.
+            </p>
+          </div>
+        </div>
+        <p className="note" style={{ marginTop: 12 }}>
+          Stage types cover the full trail: screen call, HR, fit, tech, panel, final, take-home, offer,
+          onboarding. Adding a take-home stage asks whether it&apos;s paid — unpaid take-homes are shown to
+          seekers in red, exactly as declared.
+        </p>
+      </Ood>
+    );
+  }
+
+  return (
+    <Ood>
+      <div style={CONTAINER}>
+        <div style={HEAD_ROW}>
+          <h4 style={HEAD_H4}>
+            <Icon name="conversion_path" /> The hunt trail — every stage, declared up front
+          </h4>
+          <Pill tone="green" icon="check_circle">
+            Straight to the hunt
+          </Pill>
+        </div>
+        <p style={{ fontSize: 14, margin: "8px 0 0" }}>
+          This employer declared the whole process at intake — nothing can be added later without you
+          re-confirming. <b>6 stages · 18 days to offer · no unpaid take-home.</b> Against your limits (max
+          6 stages · max 21 days · no take-home) the process scores full marks. A 9-stage, 45-day trail
+          would be flagged <b>Wild goose chase</b> here instead — before you spent the reveal.
+        </p>
+        <div className="tracker-steps" aria-label="Stage tracker — current stage: screen call">
+          {PROCESS_STAGES.map((stage, i) => (
+            <div key={stage.name} className={`tstep${i === 0 ? " now" : ""}`}>
+              <span className="tdot">
+                <Icon name={TSTEP_ICONS[i]} />
+              </span>
+              <b>{TSTEP_SHORT[i]}</b>
+              <span>{TSTEP_LABELS[i]}</span>
+            </div>
+          ))}
+        </div>
+        <div className="stage-list">
+          {PROCESS_STAGES.map((stage, i) => (
+            <div key={stage.name} className="stage-row">
+              <span className="stage-num">{i + 1}</span>
+              <div>
+                <b>{stage.name}</b> — {stage.owner}
+                <span className="stage-meta">{TRACKER_META[i]}</span>
+              </div>
+              <span className="stage-days">{TRACKER_DAYS[i]}</span>
+            </div>
+          ))}
+        </div>
+        <p className="note" style={{ margin: "10px 0 0" }}>
+          <Icon name="route" /> The tracker moves as you clear each stage — both hunters see the same trail,
+          and a stage that slips past its declared day counts toward the employer&apos;s Rep Rating. A
+          mid-hunt added stage is flagged, with a free Walk Away.
+        </p>
+      </div>
+      <p className="note" style={{ marginTop: 12 }}>
+        Process length scores inside the timing points of the Fit Score — never a hard gate. The seeker sets
+        their own limits on Screen 1 (max 6 stages · max 21 days · no unpaid take-home).
+      </p>
+    </Ood>
   );
 }

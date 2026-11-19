@@ -1,136 +1,243 @@
 import React from "react";
 
-import { CardShell, HuntButton, Icon, Muted, STATUS } from "./shared";
+import { Icon, Ood, Pill } from "./shared";
 
-export type ParseConfidence = "High" | "Medium" | "Low";
-
-export interface ParsedField {
-  label: string;
-  value: string;
-  /** True when the email never stated this — flagged, never guessed. */
-  missing?: boolean;
-}
+export type InboxHuntVariant = "high" | "flagged" | "confirmed" | "sent";
 
 export interface InboxHuntCardProps {
-  role: string;
-  company: string;
-  recruiter: string;
-  confidence: ParseConfidence;
-  fields: ParsedField[];
-  sourceEmail: string;
-  floorNote?: string;
-  confirmed?: boolean;
-  inviteSent?: boolean;
-  onEdit?: () => void;
-  onConfirm?: () => void;
-  onReveal?: () => void;
-  onWalkAway?: () => void;
+  variant?: InboxHuntVariant;
 }
 
-const CONFIDENCE_STYLES: Record<ParseConfidence, { bg: string; color: string }> = {
-  High: { bg: "#E6F4E6", color: STATUS.pass },
-  Medium: { bg: "#FDF3E3", color: STATUS.amber },
-  Low: { bg: "#FDECEA", color: STATUS.fail },
-};
+function Field({ icon, label, children, mono = false }: { icon: string; label: string; children: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="inbox-field">
+      <span className="k">
+        <Icon name={icon} /> {label}
+      </span>
+      <span className={`v${mono ? " mono" : ""}`}>{children}</span>
+    </div>
+  );
+}
+
+function OptumserveFields() {
+  return (
+    <div>
+      <Field icon="work" label="Role">
+        Senior .NET Developer
+      </Field>
+      <Field icon="business" label="Company / via">
+        Optumserve · Brooksource — Emily Rotundo
+      </Field>
+      <Field icon="payments" label="Pay" mono>
+        $60–$65/hr
+      </Field>
+      <Field icon="public" label="Location">
+        100% remote · Team works CST hours
+      </Field>
+      <Field icon="description" label="Type">
+        W2 contract-to-hire · 6 months, then convert
+      </Field>
+      <Field icon="mail" label="Source email">
+        <span style={{ color: "var(--moss)", fontWeight: 700 }}>Gmail · Nov 18, 2026, 9:14am — view email</span>
+      </Field>
+    </div>
+  );
+}
+
+function DraftActions() {
+  return (
+    <div className="hunt-actions">
+      <button type="button" className="btn btn-ghost" style={{ padding: "10px 14px", fontSize: 14 }}>
+        <Icon name="edit_note" /> Edit fields
+      </button>
+      <button type="button" className="btn btn-primary" style={{ padding: "10px 14px", fontSize: 14, width: "auto" }}>
+        <Icon name="fact_check" /> Confirm card
+      </button>
+      <button type="button" className="btn btn-ghost" style={{ padding: "10px 14px", fontSize: 14 }}>
+        <Icon name="send" /> Reveal — send invite · 0 coins
+      </button>
+      <button type="button" className="btn btn-ghost" style={{ padding: "10px 14px", fontSize: 14 }}>
+        <Icon name="directions_walk" /> Walk Away · free
+      </button>
+    </div>
+  );
+}
 
 /**
  * Inbox Hunt Card — a draft card parsed from the seeker's own recruiter
- * email. Parsed fields are exactly what the email stated; a field the
- * email didn't state stays flagged until the employer confirms it.
- * Creating a card costs 0 coins; Reveal sends the invite, also 0 coins.
+ * email, exactly as in the Storybook Preview artifact. Parsed fields are
+ * exactly what the email stated; a field the email didn't state stays
+ * flagged until the employer confirms it. Creating a card costs 0 coins;
+ * Reveal sends the invite, also 0 coins.
  */
-export function InboxHuntCard({
-  role,
-  company,
-  recruiter,
-  confidence,
-  fields,
-  sourceEmail,
-  floorNote,
-  confirmed = false,
-  inviteSent = false,
-  onEdit,
-  onConfirm,
-  onReveal,
-  onWalkAway,
-}: InboxHuntCardProps) {
-  const confidenceStyle = CONFIDENCE_STYLES[confidence];
-  const missingFields = fields.filter((f) => f.missing);
+export function InboxHuntCard({ variant = "high" }: InboxHuntCardProps) {
+  if (variant === "flagged") {
+    return (
+      <Ood>
+        <article className="hunt-card">
+          <div className="hunt-card-head">
+            <span className="pill pill-gold">DRAFT · Illustrative</span>{" "}
+            <Pill tone="gold" icon="fact_check">
+              Parse confidence: Medium
+            </Pill>
+            <h3>Senior Developer</h3>
+            <p>Via Mondo (Savannah Correro)</p>
+          </div>
+          <div className="hunt-card-body">
+            <div>
+              <Field icon="work" label="Role">
+                Senior Developer
+              </Field>
+              <Field icon="business" label="Company / via">
+                Via Mondo — Savannah Correro
+              </Field>
+              <Field icon="public" label="Location">
+                100% remote
+              </Field>
+              <Field icon="description" label="Type">
+                Contract-to-hire
+              </Field>
+              <Field icon="mail" label="Source email">
+                <span style={{ color: "var(--moss)", fontWeight: 700 }}>Gmail · Jun 24, 2026 — view email</span>
+              </Field>
+            </div>
+            <div className="flag-field">
+              <b>
+                <Icon name="warning" /> 1 field needs confirming — Pay not stated — confirm
+              </b>
+              <p style={{ margin: "4px 0 0" }}>
+                The email never named a rate, so the parse invents nothing. You can still confirm this card:
+                when Savannah joins, confirming the pay band is her first step, and until she does the pay
+                gate cannot pass — the card says so openly.
+              </p>
+            </div>
+            <DraftActions />
+          </div>
+        </article>
+        <p className="sb-note">
+          A field the email didn&apos;t state stays flagged in amber until the employer confirms it on
+          joining — and a gate that can&apos;t be checked yet can&apos;t pass. The Tulsi / SoftSages draft on
+          Screen 8 uses this same state.
+        </p>
+      </Ood>
+    );
+  }
+
+  if (variant === "confirmed") {
+    return (
+      <Ood>
+        <article className="hunt-card">
+          <div className="hunt-card-head">
+            <span className="pill pill-gold">DRAFT · Illustrative</span>{" "}
+            <Pill tone="green" icon="fact_check">
+              Parse confidence: High
+            </Pill>
+            <h3>Senior .NET Developer</h3>
+            <p>Optumserve · via Brooksource (Emily Rotundo)</p>
+            <span className="conf-tag">
+              <Icon name="check_circle" /> Card confirmed — ready to reveal
+            </span>
+          </div>
+          <div className="hunt-card-body">
+            <OptumserveFields />
+            <div className="hunt-actions">
+              <button type="button" className="btn btn-gold" style={{ padding: "10px 14px", fontSize: 14 }}>
+                <Icon name="send" /> Reveal — send invite · 0 coins
+              </button>
+              <button type="button" className="btn btn-ghost" style={{ padding: "10px 14px", fontSize: 14 }}>
+                <Icon name="directions_walk" /> Walk Away · free
+              </button>
+            </div>
+          </div>
+        </article>
+        <p className="sb-note">
+          Confirmed: the draft is locked as the seeker&apos;s hunt and Reveal is live. On an Inbox Hunt,
+          Reveal doesn&apos;t open a profile — it opens the invite email preview (next story).
+        </p>
+      </Ood>
+    );
+  }
+
+  if (variant === "sent") {
+    return (
+      <Ood>
+        <article className="hunt-card">
+          <div className="hunt-card-head">
+            <span className="pill pill-gold">DRAFT · Illustrative</span>{" "}
+            <Pill tone="green" icon="fact_check">
+              Parse confidence: High
+            </Pill>
+            <h3>Senior .NET Developer</h3>
+            <p>Optumserve · via Brooksource (Emily Rotundo)</p>
+            <span className="invite-tag">
+              <Icon name="send" /> Invite sent — waiting on employer
+            </span>
+          </div>
+          <div className="hunt-card-body">
+            <div>
+              <Field icon="work" label="Role">
+                Senior .NET Developer
+              </Field>
+              <Field icon="business" label="Company / via">
+                Optumserve · Brooksource — Emily Rotundo
+              </Field>
+              <Field icon="payments" label="Pay" mono>
+                $60–$65/hr
+              </Field>
+              <Field icon="public" label="Location">
+                100% remote · Team works CST hours
+              </Field>
+              <Field icon="description" label="Type">
+                W2 contract-to-hire · 6 months, then convert
+              </Field>
+            </div>
+          </div>
+          <div className="invite-sent" role="status">
+            <b>
+              <Icon name="mark_email_read" /> Invite sent — Thu, Nov 19, 2026
+            </b>
+            <p style={{ margin: "4px 0 0" }}>
+              This card now sits on the <b>Waiting on employer</b> shelf. No response clock runs and nobody
+              can ghost — the hunt only starts when both hunters are on the ground. Walk Away still cancels
+              the invite. After 14 days with no join, the card rests on the “Employer didn&apos;t join” shelf
+              with exactly one free re-send.
+            </p>
+          </div>
+        </article>
+        <p className="sb-note">
+          Every field parsed from the email was saved onto the hunt when the invite was sent — Emily&apos;s
+          form opens pre-filled and locked, and only asks for what the email never said.
+        </p>
+      </Ood>
+    );
+  }
 
   return (
-    <CardShell labelledBy={`inbox-hunt-${role.replace(/[^a-z0-9]+/gi, "-")}`}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <span className="rounded-full px-2.5 py-1 text-xs font-bold tracking-wide" style={{ backgroundColor: "#F5F5F4", color: "#57534E" }}>
-          DRAFT · Illustrative
-        </span>
-        <span
-          className="rounded-full px-2.5 py-1 text-xs font-semibold"
-          style={{ backgroundColor: confidenceStyle.bg, color: confidenceStyle.color }}
-        >
-          Parse confidence: {confidence}
-        </span>
-      </div>
-
-      <h3 className="mt-3 text-xl font-bold" style={{ color: "var(--jh-text)" }}>
-        {role}
-      </h3>
-      <p className="text-sm" style={{ color: "var(--jh-muted-text)" }}>
-        {company} · {recruiter}
+    <Ood>
+      <article className="hunt-card">
+        <div className="hunt-card-head">
+          <span className="pill pill-gold">DRAFT · Illustrative</span>{" "}
+          <Pill tone="green" icon="fact_check">
+            Parse confidence: High
+          </Pill>
+          <h3>Senior .NET Developer</h3>
+          <p>Optumserve · via Brooksource (Emily Rotundo)</p>
+        </div>
+        <div className="hunt-card-body">
+          <OptumserveFields />
+          <p className="note" style={{ margin: 0 }}>
+            <Icon name="gps_fixed" /> Against your floor: band top $65/hr is{" "}
+            <b>6.4% below your $69.46/hr floor</b> — inside your 10% tolerance, so this hunt can be taken in
+            and countered once Emily joins. The parse hid nothing: the shortfall is on the face of the card.
+          </p>
+          <DraftActions />
+        </div>
+      </article>
+      <p className="sb-note">
+        Parsed fields are exactly what the email stated — nothing filled in by guessing. <b>Edit</b> fixes a
+        mis-parse, <b>Confirm card</b> locks the draft as your hunt, and only a confirmed card can be
+        revealed. Creating and revealing an Inbox Hunt costs 0 coins.
       </p>
-
-      <dl className="mt-4 grid gap-2 sm:grid-cols-2">
-        {fields.map((field) => (
-          <div key={field.label} className="rounded-lg p-2.5 ring-1" style={{ borderColor: "var(--jh-border)" }}>
-            <dt className="text-xs font-semibold" style={{ color: "var(--jh-muted-text)" }}>
-              {field.label}
-            </dt>
-            <dd className="mt-0.5 text-sm font-semibold" style={{ color: field.missing ? STATUS.amber : "var(--jh-text)" }}>
-              {field.missing ? (
-                <span className="inline-flex items-center gap-1">
-                  <Icon name="close" size={14} /> {field.value} — confirm
-                </span>
-              ) : (
-                field.value
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
-      {missingFields.length > 0 ? (
-        <p className="mt-3 rounded-lg px-3 py-2 text-sm font-semibold" style={{ backgroundColor: "#FDF3E3", color: STATUS.amber }} role="status">
-          {missingFields.length} field{missingFields.length > 1 ? "s" : ""} need{missingFields.length > 1 ? "" : "s"} confirming —{" "}
-          {missingFields.map((f) => f.label).join(", ")}. The email never named {missingFields.length > 1 ? "them" : "it"}, so the parse invents nothing.
-        </p>
-      ) : null}
-
-      {floorNote ? <Muted>{floorNote}</Muted> : null}
-      <p className="mt-2 text-xs" style={{ color: "var(--jh-muted-text)" }}>
-        Source: {sourceEmail}
-      </p>
-
-      {inviteSent ? (
-        <p className="mt-3 rounded-lg px-3 py-2 text-sm font-semibold" style={{ backgroundColor: "#E6F4E6", color: STATUS.pass }} role="status">
-          Invite sent — waiting on employer. No response clock runs here and nobody can ghost.
-        </p>
-      ) : null}
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <HuntButton variant="ghost" onClick={onEdit}>
-          <Icon name="edit" size={16} /> Edit fields
-        </HuntButton>
-        {!confirmed ? (
-          <HuntButton onClick={onConfirm}>Confirm card</HuntButton>
-        ) : (
-          <HuntButton onClick={onReveal} disabled={inviteSent}>
-            Reveal — send invite · 0 coins
-          </HuntButton>
-        )}
-        <HuntButton variant="ghost" onClick={onWalkAway}>
-          Walk away · free
-        </HuntButton>
-      </div>
-      <Muted>Only a confirmed card can be revealed. Inbox Hunts never charge coins and never invent data.</Muted>
-    </CardShell>
+    </Ood>
   );
 }
