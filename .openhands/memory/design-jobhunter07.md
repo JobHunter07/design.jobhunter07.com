@@ -105,3 +105,22 @@ metrics, so one baseline cannot serve both.
   minutes, and the deploy job's own smoke test may pass while the public URL
   still 404s. Poll `age` until it drops to ~0 before believing a probe.
   `?cb=<random>` does NOT bypass it — the cache key ignores the query string.
+
+## Pages fix confirmed + how to read the story count (2026-11-19)
+- **Owner flipped Settings -> Pages -> Source to "GitHub Actions"**; verified via
+  API `build_type: workflow`, `https_cert: approved`, `https_enforced: true`,
+  cname intact. `verify-pages-config.yml` now passes (was red by design).
+- **Story count is not a constant — do not hard-code 25.** A local build at
+  `4c533eb` had 25 entries; the live site reported 63. That was NOT stale or
+  foreign content: commit `4a38d5d` ("Add One-and-Done Matching components")
+  landed on `main` afterwards, adding `src/components/one-and-done/*` and
+  `src/stories/one-and-done/*` (~2,690 lines). Rebuilding locally at `4a38d5d`
+  gave exactly 63, matching live. **Always compare `curl index.json | jq
+  '.entries|length'` against a fresh local `npm run build-storybook`, never
+  against a remembered number.**
+- Checks at `4a38d5d`: tsc clean, eslint clean, storybook build clean, vitest
+  **28 files / 60 tests** passing (was 15/22 before the one-and-done commit),
+  six stories render-verified in production with 0 console errors and 0 failed
+  requests.
+- `npx playwright install chromium` is needed again after a `npm ci`/version
+  bump; the cached headless shell path changes with the Playwright version.
