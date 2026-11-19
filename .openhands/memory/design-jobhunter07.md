@@ -68,3 +68,32 @@ metrics, so one baseline cannot serve both.
   npm package directly (`npx playwright install chromium`).
 - Throwaway `.mjs` scripts importing project deps must live in the project dir;
   ESM will not resolve them from `/tmp`.
+
+## GitHub Pages was serving a Jekyll README, not Storybook (2026-11-19)
+- **Symptom**: the deploy workflow went green on every push, yet
+  `https://design.jobhunter07.com/` rendered the repo `README.md` and
+  `/iframe.html` returned **404**, `/index.json` **503**. Storybook had never
+  been published, despite months of "successful" deploys.
+- **Cause**: `GET /repos/{o}/{r}/pages` reported `build_type: legacy`,
+  `source: {branch: main, path: /}`. Pages was in "Deploy from a branch" mode,
+  so GitHub ran its **own Jekyll build** on each push, racing the repo's
+  `actions/deploy-pages` artifact. Whichever finished last won; the Jekyll build
+  renders `README.md` as the homepage and has no `iframe.html`.
+- **Proven, not assumed**: re-running only the legacy `pages build and
+  deployment` run reverted the site (iframe 404 -> 503, Jekyll marker returned);
+  re-dispatching `deploy-storybook.yml` restored it. Two `github-pages`
+  deployments are created per push, which is the tell.
+- **Fix is manual and cannot be automated from CI**: Settings -> Pages -> Source
+  = "GitHub Actions". `PUT/PATCH /pages` returns
+  `Resource not accessible by integration` for `GITHUB_TOKEN` and
+  `Resource not accessible by personal access token` for the sandbox PAT —
+  both lack Pages admin scope. Reading `/pages` works, writing does not.
+- **Guards added**: `verify-pages-config.yml` fails if `build_type != workflow`;
+  a "Smoke-test the deployed site" step in the deploy job asserts
+  `index.json` and `iframe.html` return 200 and reports the story count.
+- **Verifying a deploy**: never trust the green check. `curl -s
+  https://design.jobhunter07.com/index.json | jq '.entries|length'` must be 25.
+- `deploy-pages` intermittently fails with `No artifacts named "github-pages"
+  were found` even though `upload-artifact` succeeded; re-running fixes it.
+- Tokens: `GITHUB_TOKEN` is a `ghu_` GitHub App user token (no OAuth scopes);
+  `$Github_Super_Token` authenticates as the owner but still cannot write Pages.

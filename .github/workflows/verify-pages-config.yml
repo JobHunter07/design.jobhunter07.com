@@ -1,0 +1,42 @@
+name: Verify deploy workflow config
+
+# Guards the failure that let design.jobhunter07.com serve a Jekyll-rendered
+# README instead of Storybook: GitHub Pages was set to build_type "legacy"
+# (branch main:/), so a legacy Jekyll build ran on every push and raced this
+# repo's actions/deploy-pages artifact, sometimes overwriting it.
+#
+# Pages cannot be switched to "workflow" from CI (it needs admin REST access
+# that GITHUB_TOKEN does not have), so the setting is documented in
+# docs/DEPLOYMENT.md and checked here where possible.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: read
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pages must be served from Actions, not a branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          build_type=$(gh api "repos/${{ github.repository }}/pages" --jq .build_type)
+          echo "Pages build_type = $build_type"
+          if [ "$build_type" != "workflow" ]; then
+            echo "::error::GitHub Pages build_type is '$build_type', expected 'workflow'."
+            echo "A legacy branch build will race this repo's deploy and can serve"
+            echo "the repo README instead of Storybook. Fix: Settings -> Pages ->"
+            echo "Source = 'GitHub Actions'. See docs/DEPLOYMENT.md."
+            exit 1
+          fi

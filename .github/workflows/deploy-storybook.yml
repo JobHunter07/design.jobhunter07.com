@@ -53,3 +53,25 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Smoke-test the deployed site
+        env:
+          SITE: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          # A green deploy is not proof: with Pages in legacy mode a Jekyll
+          # build can overwrite this artifact and serve the repo README instead.
+          for attempt in $(seq 1 10); do
+            index=$(curl -s -o /dev/null -w '%{http_code}' "${SITE}index.json")
+            iframe=$(curl -s -o /dev/null -w '%{http_code}' "${SITE}iframe.html")
+            echo "attempt $attempt: index.json=$index iframe.html=$iframe"
+            if [ "$index" = "200" ] && [ "$iframe" = "200" ]; then
+              count=$(curl -s "${SITE}index.json" | jq '.entries | length')
+              echo "Storybook is live with $count stories."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Deployed site is not serving Storybook (index.json=$index, iframe.html=$iframe)."
+          echo "Most likely cause: GitHub Pages Source is not 'GitHub Actions'."
+          echo "See docs/DEPLOYMENT.md."
+          exit 1

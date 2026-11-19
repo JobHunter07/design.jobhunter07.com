@@ -28,6 +28,11 @@ lint, Storybook or dependency config).
 - **Playwright visual baselines are per-platform.** CI is Ubuntu, so a win32-only
   baseline silently "passes" by writing a new snapshot. Both baselines now exist.
 - **CI runs Node 24** (Vitest 5 needs >=22.12).
+- **Pages must be set to Source = "GitHub Actions"** in repo Settings. If left
+  on "Deploy from a branch" (legacy), GitHub Jekyll-builds `README.md` and races
+  this repo's deploy, so the site serves the README with 404 for every Storybook
+  asset while the workflow still reports success. Cannot be fixed from CI — it
+  needs admin scope. See `docs/DEPLOYMENT.md`.
 
 ## Unrelated content in this directory
 
