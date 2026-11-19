@@ -1,25 +1,29 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import React from "react";
-import { SiteChrome } from "../../src/components/chrome/SiteChrome";
-import { ToolsSection } from "../../components/tools/ToolsSection";
-import { tools } from "../../data/landing";
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import React from 'react';
 
-const meta: Meta<typeof ToolsSection> = {
-  title: "Landing/ToolsSection",
+import { ToolsSection } from '../../components/tools/ToolsSection';
+import { tools } from '../../data/landing';
+
+const meta = {
+  title: 'Landing/ToolsSection',
   component: ToolsSection,
+  parameters: {
+    layout: 'fullscreen',
+  },
   decorators: [
     (Story) => (
-      <SiteChrome>
+      <div className="min-h-screen bg-[#2b2622] px-4 py-10 text-[#f4f1e6]">
         <div className="mx-auto max-w-5xl">
           <Story />
         </div>
-      </SiteChrome>
+      </div>
     ),
   ],
-};
+} satisfies Meta<typeof ToolsSection>;
 
 export default meta;
-type Story = StoryObj<typeof ToolsSection>;
+
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: { tools },
