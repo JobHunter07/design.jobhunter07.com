@@ -124,3 +124,12 @@ metrics, so one baseline cannot serve both.
   requests.
 - `npx playwright install chromium` is needed again after a `npm ci`/version
   bump; the cached headless shell path changes with the Playwright version.
+
+## Deploy failure on the preview port (2026-11-19)
+- Deploy runs #19 (`751be61`, port commit) and #20 (`869cb46`, story cleanup)
+  both FAILED at "Deploy to GitHub Pages" (actions/deploy-pages@v4):
+  `No artifacts named "github-pages" were found` + `Fetching artifact metadata
+  failed`, even though "Upload artifact" passed and the 5.4 MB artifact is
+  listed. Build itself passed. Same known trap as above — re-running fixes it.
+- Live site still served the `4a38d5d` build until a deploy succeeds.
+- Re-triggered by a docs-only commit (this note) on 2026-11-19.
