@@ -97,3 +97,11 @@ metrics, so one baseline cannot serve both.
   were found` even though `upload-artifact` succeeded; re-running fixes it.
 - Tokens: `GITHUB_TOKEN` is a `ghu_` GitHub App user token (no OAuth scopes);
   `$Github_Super_Token` authenticates as the owner but still cannot write Pages.
+- **CDN caches the 404s for ~2.5 min after a bad deploy.** After a legacy
+  Jekyll build overwrites the site, GitHub's Fastly cache keeps serving
+  `404` for `/index.json` and `/iframe.html` (and `200` for the Jekyll `/`)
+  with `x-origin-cache: HIT` until the entry expires (observed ~150 s, `age`
+  header climbs then resets). So a *correct* redeploy can look broken for
+  minutes, and the deploy job's own smoke test may pass while the public URL
+  still 404s. Poll `age` until it drops to ~0 before believing a probe.
+  `?cb=<random>` does NOT bypass it — the cache key ignores the query string.
