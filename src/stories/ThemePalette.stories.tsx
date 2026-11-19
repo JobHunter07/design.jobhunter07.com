@@ -11,9 +11,11 @@ type Section = {
   keys: (keyof (typeof theme)[ThemeMode]['palette'])[];
 };
 
-const ThemePalettePage: React.FC = () => {
-  const [{ theme: globalTheme }] = useGlobals();
-  const mode: ThemeMode = globalTheme === 'dark' ? 'dark' : 'light';
+interface ThemePalettePageProps {
+  mode: ThemeMode;
+}
+
+const ThemePalettePage: React.FC<ThemePalettePageProps> = ({ mode }) => {
   const palette = theme[mode].palette;
 
   const sections: Section[] = [
@@ -139,8 +141,11 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
     docs: {
-      page: () => <ThemePalettePage />,
+      page: () => <ThemePalettePage mode="light" />,
     },
+  },
+  args: {
+    mode: 'light',
   },
 } satisfies Meta<typeof ThemePalettePage>;
 
@@ -149,5 +154,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const ThemePaletteDocs: Story = {
-  render: () => <ThemePalettePage />,
+  render: function Render() {
+    const [{ theme: globalTheme }] = useGlobals();
+    const mode: ThemeMode = globalTheme === 'dark' ? 'dark' : 'light';
+
+    return <ThemePalettePage mode={mode} />;
+  },
 };
