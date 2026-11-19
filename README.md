@@ -6,7 +6,7 @@ A Next.js application with Storybook for component development and documentation
 
 ### Prerequisites
 
-- Node.js 20.x or higher
+- Node.js 24.x or higher
 - npm
 
 ### Installation
