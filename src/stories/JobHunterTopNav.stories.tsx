@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+
 import { JobHunterTopNav } from '../design/jobhunter07/TopNav';
 
 const meta = {
