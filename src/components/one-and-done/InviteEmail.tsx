@@ -103,7 +103,7 @@ export function InviteEmail({ variant = "emily" }: InviteEmailProps) {
           <p className="invite-edit-note">
             Your words — edit before sending. The banner above is fixed on every invite; the body below is yours.
           </p>
-          <textarea className="invite-body-edit" rows={12} readOnly value={body} aria-label="Invite email body — your words, editable before sending" />
+          <div className="invite-body-edit">{body}</div>
           <div className="prefilled-box">
             <h4>What&apos;s already filled in — saved from the email</h4>
             {rows.map((row) => (
